@@ -1,1 +1,118 @@
-<h1>Test</h1>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style>
+
+body {
+	background: #f5f5f5;
+}
+
+#result {
+	margin:auto;
+	width: max(20vw, 100px); 
+	box-shadow: 0px 0px 18px 3px #0000001C;
+	padding: 20px;
+}
+
+</style>
+<title>Data Export</title>
+</head>
+
+<body>
+    <div id="result" class="">
+        <p id="OutputText">Wrong datasetID format</p>
+    </div>
+
+
+
+
+    <script>
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const datasetID_param = urlParams.get('datasetID');
+        const datasetIDregex = /^(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})$/;
+        const table_param = urlParams.get('table');
+        const name_param = urlParams.get('name');
+        const result = document.getElementById('result');
+        const OutputText = document.getElementById('OutputText');
+        const fileName = function () {
+            let result;
+            if (name_param === null) {
+                result = "PowerBI Data.odc";
+            } else {
+                result = `${name_param}.odc`;
+            }
+            return result;
+        }
+const daxQuery = function () {
+    return table_param.replace(/\n/g, "&#10;&#13;");
+}
+
+        const getFileText = function () {
+            return `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv=Content-Type content="text/x-ms-odc; charset=utf-8">
+<meta name=ProgId content=ODC.Table>
+<meta name=SourceType content=OLEDB>
+<title>Connection</title>
+<xml id=docprops><o:DocumentProperties
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns="http://www.w3.org/TR/REC-html40">
+  <o:Description>Connection to the '${daxQuery()}' query in the workbook.</o:Description>
+  <o:Name>Query - ${daxQuery()}</o:Name>
+ </o:DocumentProperties>
+</xml><xml id=msodc><odc:OfficeDataConnection
+  xmlns:odc="urn:schemas-microsoft-com:office:odc"
+  xmlns="http://www.w3.org/TR/REC-html40">
+  <odc:PowerQueryConnection odc:Type="OLEDB">
+   <odc:ConnectionString>Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=&quot;${daxQuery()}&quot;;Extended Properties=&quot;&quot;</odc:ConnectionString>
+   <odc:CommandType>SQL</odc:CommandType>
+   <odc:CommandText>SELECT * FROM [${daxQuery()}]</odc:CommandText>
+  </odc:PowerQueryConnection>
+  <odc:PowerQueryMashupData>&lt;Mashup xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xmlns=&quot;http://schemas.microsoft.com/DataMashup&quot;&gt;&lt;Client&gt;EXCEL&lt;/Client&gt;&lt;Version&gt;2.119.404.0&lt;/Version&gt;&lt;MinVersion&gt;2.21.0.0&lt;/MinVersion&gt;&lt;Culture&gt;en-GB&lt;/Culture&gt;&lt;SafeCombine&gt;true&lt;/SafeCombine&gt;&lt;Items&gt;&lt;Query Name=&quot;${daxQuery()}&quot;&gt;&lt;Formula&gt;&lt;![CDATA[let&#13;&#10;    Source = PowerPlatform.Dataflows(null),&#13;&#10;    Workspaces = Source{[Id=&quot;Workspaces&quot;]}[Data],&#13;&#10;    #&quot;13fc8012-a333-4170-b24d-d074e2502ef3&quot; = Workspaces{[workspaceId=&quot;13fc8012-a333-4170-b24d-d074e2502ef3&quot;]}[Data],&#13;&#10;    #&quot;5fe4ed22-5afd-4934-b133-460b301758b1&quot; = #&quot;13fc8012-a333-4170-b24d-d074e2502ef3&quot;{[dataflowId=&quot;5fe4ed22-5afd-4934-b133-460b301758b1&quot;]}[Data],&#13;&#10;    #&quot;${daxQuery()}_&quot; = #&quot;5fe4ed22-5afd-4934-b133-460b301758b1&quot;{[entity=&quot;${daxQuery()}&quot;,version=&quot;&quot;]}[Data]&#13;&#10;in&#13;&#10;    #&quot;${daxQuery()}_&quot;]]&gt;&lt;/Formula&gt;&lt;IsParameterQuery xsi:nil=&quot;true&quot; /&gt;&lt;IsDirectQuery xsi:nil=&quot;true&quot; /&gt;&lt;/Query&gt;&lt;/Items&gt;&lt;/Mashup&gt;</odc:PowerQueryMashupData>
+ </odc:OfficeDataConnection>
+</xml>
+</head>
+</html>`;
+        }
+        const process = function (event) {
+            if (
+                table_param === null
+            ) {
+                OutputText.innerHTML = 'Missing parameter: table';
+                return;
+            } else if (
+                datasetID_param === null
+            ) {
+                OutputText.innerHTML = 'Missing parameter: datasetID';
+                return;
+            } else if (
+                !datasetIDregex.test(datasetID_param)
+            ) {
+                OutputText.innerHTML = 'Wrong datasetID format';
+                return;
+            } else {
+                OutputText.innerHTML = 'Downloading the Excel connection file. You can close the window.';
+                download(fileName(), getFileText());
+                // window.close(); Can't close window
+            };
+        }
+        window.onload = function () {
+            ;
+            process();
+        };
+
+        function download(filename, text) {
+            var element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+
+        }
+    </script>
+
+
+
+</body></html>
